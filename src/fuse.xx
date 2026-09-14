@@ -26,6 +26,9 @@ public:
     void set_target(const stdfs::path& p);
 
     inline void set_ignore_dotfiles(bool b) { this->ignore_dotfiles = b; }
+    inline void set_cache_size(uz sz) { this->max_cached_files = sz; }
+    // TODO: should this also affect hidden_files?
+    inline void set_show_base_files(bool b) { this->show_base_files = b; }
 
     int run();
 
@@ -73,10 +76,14 @@ private:
     stdfs::path source_path;
     stdfs::path target_path;
     bool        ignore_dotfiles;
-    uz          max_cached_files = 5;
+    uz          max_cached_files;
+    bool        show_base_files;
 
     mutable
     std::unordered_map<std::string, CueCacheEntry> cache;
+
+    mutable
+    std::unordered_set<stdfs::path> hidden_files;
 }; // <-- class FUSE
 
 } // <-- namespace qsefs

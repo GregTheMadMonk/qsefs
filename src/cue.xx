@@ -40,6 +40,12 @@ public:
     [[nodiscard]]
     int read_track(const Track& track, std::span<char> buf, iptr off) const;
 
+    [[nodiscard]]
+    auto get_base_files() const {
+        return stdv::values(this->base_files)
+             | stdv::transform([] (const auto& f) { return f.get_path(); });
+    } // <-- auto get_base_files() const
+
 private:
     std::string        data;
     std::vector<Track> tracks;

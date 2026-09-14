@@ -103,7 +103,23 @@ FUSE::read_dir(const stdfs::path& dir) const {
     auto& v = ret.emplace();
 
     for (const auto& e : stdfs::directory_iterator(*path)) {
-        auto str = e.path().filename().string();
+        const auto& path = e.path();
+
+        if (!this->show_base_files) {
+            // Need to load all possible .cue's in the folder
+            // to know what files to hide
+            // TODO: make the analysis more shallow without loading the whole
+            //       base audio file
+            if (is_cue(path)) {
+                if (const auto& cue = this->read_cue(path); cue.has_value()) {
+                    for (const auto& file : cue->get_base_files()) {
+                        this->hidden_files.insert(file);
+                    }
+                }
+            }
+        }
+
+        auto str = path.filename().string();
 
         if (this->ignore_dotfiles && str.starts_with('.')) {
             continue;
@@ -111,6 +127,13 @@ FUSE::read_dir(const stdfs::path& dir) const {
 
         v.push_back(std::move(str));
     }
+
+    std::erase_if(
+        v, [this, &path] (auto& e) {
+            return this->hidden_files.contains(*path / e);
+        }
+    );
+
     return ret;
 } // <-- optional<vector<DirEntry>> FUSE::read_dir(dir) const
 

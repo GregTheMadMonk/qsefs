@@ -83,7 +83,7 @@ public:
         cvt::WAVHeader wav;
     }; // <-- struct Info
 
-    AudioInput(const stdfs::path& path);
+    AudioInput(const stdfs::path& p);
 
     [[nodiscard]]
     inline const auto& wav_info() const { return this->info.wav; }
@@ -101,6 +101,8 @@ public:
      */
     [[nodiscard]] std::vector<u8> read_samples(uz idx, uz num) const;
 
+    [[nodiscard]] const stdfs::path& get_path() const { return this->path; }
+
 private:
     static int readf(void* opaque, u8* buf, int buf_size);
     static iptr seekf(void* opaque, iptr offset, int whence);
@@ -112,6 +114,10 @@ private:
     using Packet = std::unique_ptr<AVPacket, cvt::AVDeleter>;
     using Frame  = std::unique_ptr<AVFrame, cvt::AVDeleter>;
 
+    /**
+     * @brief The file path
+     */
+    stdfs::path    path;
     /**
      * @brief The file itself
      */

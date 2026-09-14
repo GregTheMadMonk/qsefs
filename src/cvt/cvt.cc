@@ -20,8 +20,9 @@ namespace qsefs {
 
 static constexpr uz av_ctx_buf_size = 1024;
 
-AudioInput::AudioInput(const stdfs::path& path)
-    : file{path}
+AudioInput::AudioInput(const stdfs::path& p)
+    : path{p}
+    , file{p}
     , seek{0}
     , buf{
           [] {

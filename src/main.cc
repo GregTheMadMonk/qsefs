@@ -20,7 +20,11 @@ int main(int argc, char** argv) {
 
         fuse.set_source(argv[1]);
         fuse.set_target(argv[2]);
+
+        // TODO: get from config
         fuse.set_ignore_dotfiles(true);
+        fuse.set_cache_size(50);
+        fuse.set_show_base_files(false);
 
         return fuse.run();
     } catch (const std::exception& e) {
