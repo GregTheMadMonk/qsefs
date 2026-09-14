@@ -13,7 +13,11 @@ namespace qsefs {
 export
 class FUSE {
 private:
-    using CueCacheEntry = std::expected<Cue, std::string>;
+    struct CueCacheEntry {
+        using Data = std::expected<Cue, std::string>;
+        stdc::time_point<stdc::steady_clock> fetched;
+        Data                                 data;
+    }; // <-- struct CueCacheEntry
 
 public:
     static FUSE& get();
@@ -37,7 +41,8 @@ private:
     std::expected<std::vector<DirEntry>, int>
     read_dir(const stdfs::path& dir) const;
 
-    [[nodiscard]] const CueCacheEntry& read_cue(const stdfs::path& cue) const;
+    [[nodiscard]]
+    const CueCacheEntry::Data& read_cue(const stdfs::path& cue) const;
 
     /**
      * @brief Get track from filename and CUE name
@@ -60,9 +65,15 @@ private:
     [[nodiscard]]
     std::optional<stdfs::path> real_path(const stdfs::path& p) const;
 
+    /**
+     * @brief Housekeep the cache, remove old (or oldest) entries)
+     */
+    void flush_cache() const;
+
     stdfs::path source_path;
     stdfs::path target_path;
     bool        ignore_dotfiles;
+    uz          max_cached_files = 5;
 
     mutable
     std::unordered_map<std::string, CueCacheEntry> cache;

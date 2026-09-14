@@ -114,15 +114,18 @@ FUSE::read_dir(const stdfs::path& dir) const {
     return ret;
 } // <-- optional<vector<DirEntry>> FUSE::read_dir(dir) const
 
-const FUSE::CueCacheEntry&
+const FUSE::CueCacheEntry::Data&
 FUSE::read_cue(const stdfs::path& cue) const {
+    this->flush_cache();
+
+    const auto now = stdc::steady_clock::now();
     try {
-        this->cache.try_emplace(cue.string(), cue);
+        this->cache.try_emplace(cue.string(), now, cue);
     } catch (const std::exception& e) {
-        this->cache.try_emplace(cue.string(), std::unexpected(e.what()));
+        this->cache.try_emplace(cue.string(), now, std::unexpected(e.what()));
     }
 
-    return this->cache.at(cue.string());
+    return this->cache.at(cue.string()).data;
 } // <-- FUSE::read_cue(cue) const
 
 std::optional<const Cue::Track&>
@@ -297,5 +300,19 @@ std::optional<stdfs::path> FUSE::real_path(const stdfs::path& p) const {
 
     return std::nullopt;
 } // <-- optional<path> FUSE::real_path(p) const
+
+void FUSE::flush_cache() const {
+    while (this->cache.size() > this->max_cached_files) {
+        auto oldest = this->cache.begin();
+        for (auto it = this->cache.begin(); it != this->cache.end(); ++it) {
+            if (it->second.fetched < oldest->second.fetched) {
+                oldest = it;
+            }
+        }
+
+        std::println(std::cerr, "Removing {} from cache", oldest->first);
+        this->cache.erase(oldest);
+    }
+} // <-- void FUSE::flush_cache() const
 
 } // <-- namespace qsefs
