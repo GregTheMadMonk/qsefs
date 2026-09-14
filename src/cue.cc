@@ -122,31 +122,31 @@ Cue::Cue(const stdfs::path& file) : path{file}, base_files{} {
 
     const std::unordered_map<std::string, TagProc, Hash, Compare> procs{
         {
-            "GENRE", [&] (std::string_view g) { next.genre = g; }
+            "GENRE", [&] (std::string_view g) { next.meta.genre = g; }
         },
         {
             "DATE", [&] (std::string_view y) {
-                std::from_chars(y.cbegin(), y.cend(), next.year);
+                std::from_chars(y.cbegin(), y.cend(), next.meta.year);
             }
         },
         {
-            "DISCID", [&] (std::string_view id) { next.disc_id = id; }
+            "DISCID", [&] (std::string_view id) { next.meta.disc_id = id; }
         },
         {
-            "COMMENT", [&] (std::string_view c) { next.comment = c; }
+            "COMMENT", [&] (std::string_view c) { next.meta.comment = c; }
         },
         {
-            "PERFORMER", [&] (std::string_view p) { next.artist = p; }
+            "PERFORMER", [&] (std::string_view p) { next.meta.artist = p; }
         },
         {
-            "COMPOSER", [&] (std::string_view c) { next.composer = c; }
+            "COMPOSER", [&] (std::string_view c) { next.meta.composer = c; }
         },
         {
-            "ISRC", [&] (std::string_view isrc) { next.isrc = isrc; }
+            "ISRC", [&] (std::string_view isrc) { next.meta.isrc = isrc; }
         },
         {
             "TITLE", [&] (std::string_view t) {
-                (in_track ? next.title : next.album) = t;
+                (in_track ? next.meta.title : next.meta.album) = t;
             }
         },
         {
@@ -182,7 +182,7 @@ Cue::Cue(const stdfs::path& file) : path{file}, base_files{} {
                     throw "Track number isn't an integer: `{}`"_err(info);
                 }
 
-                std::from_chars(info.cbegin(), info.cend(), next.index);
+                std::from_chars(info.cbegin(), info.cend(), next.meta.index);
             }
         },
         {
@@ -275,7 +275,11 @@ Cue::Cue(const stdfs::path& file) : path{file}, base_files{} {
     }
 
     push_track();
-    stdr::sort(this->tracks, std::less<>{}, &Track::index);
+    stdr::sort(
+        this->tracks,
+        std::less<>{},
+        [] (auto& t) { return t.meta.index; }
+    );
 
     std::println("Successfully parsed {}", this->path);
 
@@ -319,7 +323,7 @@ int Cue::read_track(const Track& t, std::span<char> buf, iptr off) const {
     const auto  full_size = this->get_track_file_size(t);
     auto& base            = this->base_files.at(t.file);
     const auto& wav       = base.wav_info();
-    const auto  hdr       = wav.pack(full_size);
+    const auto  hdr       = wav.pack(full_size, t.meta);
 
     // If some portion of the `buf` is supposed to be the header, read it
     if (off < 0) {

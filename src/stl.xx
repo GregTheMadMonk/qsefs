@@ -12,5 +12,6 @@ export import dxx.cstd.fixed;
 
 export namespace stdc  = std::chrono;
 export namespace stdfs = std::filesystem;
+export namespace stdm  = std::meta;
 export namespace stdr  = std::ranges;
 export namespace stdv  = std::views;

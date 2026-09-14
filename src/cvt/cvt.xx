@@ -1,5 +1,6 @@
 export module qsefs.cvt;
 
+import qsefs.metadata;
 import qsefs.mmap;
 import stl;
 
@@ -52,7 +53,7 @@ struct WAVHeader {
      *
      * @param data_size the size of the WAV PCM data section
      */
-    [[nodiscard]] std::vector<u8> pack(u32 data_size) const;
+    [[nodiscard]] std::vector<u8> pack(u32 data_size, const Metadata& m) const;
 
     /**
      * @brief Calculate data chunk size for specified duration

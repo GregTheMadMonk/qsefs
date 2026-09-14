@@ -1,0 +1,42 @@
+export module qsefs.metadata;
+
+import stl;
+
+namespace qsefs {
+
+export struct WavTag { std::array<char, 4> tag; };
+
+[[nodiscard]]
+consteval
+WavTag wav_tag(const char (&str)[5]) {
+    WavTag ret{};
+    std::copy_n(str, 4, ret.tag.begin());
+    return ret;
+} // <-- WavTag wav_tag(str[len])
+
+/**
+ * @brief Track metadata
+ */
+export
+struct Metadata {
+    [[=wav_tag("IART")]]
+    std::string artist;
+    [[=wav_tag("INAM")]]
+    std::string title;
+    [[=wav_tag("IPRD")]]
+    std::string album;
+    [[=wav_tag("IGNR")]]
+    std::string genre;
+    std::string disc_id;
+    [[=wav_tag("ICMT")]]
+    std::string comment;
+    std::string composer;
+    [[=wav_tag("ISRC")]]
+    std::string isrc;
+    [[=wav_tag("ICRD")]]
+    int         year;
+    [[=wav_tag("ITRK")]]
+    uz          index;
+}; // <-- struct Metadata
+
+} // <-- namespace qsefs

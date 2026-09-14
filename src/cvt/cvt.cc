@@ -12,91 +12,11 @@ extern "C" {
 module qsefs.cvt;
 
 import dxx.errors;
-import dxx.overload;
 import dxx.utils;
 
 using namespace dxx::errors::literals;
 
 namespace qsefs {
-
-namespace cvt {
-
-std::vector<u8> WAVHeader::pack(u32 data_size) const {
-    std::vector<u8> ret{};
-
-    static_assert(riff_size + fmt_size + 8 == 44);
-    // Calculate the header size
-    ret.resize(riff_size + fmt_size + 8, 0);
-    uz cur = 0; // "cursor"
-
-    const auto write = dxx::overload::Overload{
-        [&ret, &cur] (u8 byte) {
-            ret.at(cur++) = byte;
-        },
-        [] <uz n> (this auto& self, const char (&str)[n]) {
-            for (uz i = 0; i < n - 1; ++i) {
-                self(str[i]);
-            }
-        },
-        [] <typename T> (this auto& self, const T& v) {
-            const auto buf = std::bit_cast<std::array<u8, sizeof(T)>>(v);
-
-            for (u8 byte : buf) {
-                self(byte);
-            }
-        },
-    }; // <-- write(v)
-
-    // riff chunk id
-    write("RIFF");
-    // riff chunk size
-    write(u32{ riff_size - (2 * 4) + fmt_size + data_size });
-    // wave id
-    write("WAVE");
-
-    // fmt chunk id
-    write("fmt ");
-    // fmt chunk size
-    write(static_cast<u32>(fmt_size - 2 * 4));
-    // format tag
-    write(std::to_underlying(this->tag));
-
-    write(this->channels);
-    write(this->sample_rate);
-
-    if (this->bits_per_sample % 8 != 0) {
-        throw "Bits per sample that's not divisible by 8 is unsupported: {}"_err
-              (this->bits_per_sample);
-    }
-
-    write(
-        static_cast<u32>(
-            this->sample_rate
-            * (this->bits_per_sample / 8)
-            * this->channels
-        )
-    ); // byte rate
-
-    write(
-        static_cast<u16>(this->channels * this->bits_per_sample / 8)
-    ); // alignment
-
-    write(this->bits_per_sample);
-
-    write("data");
-    write(data_size);
-
-    return ret;
-} // <-- vector<u8> WAVHeader::pack() const
-
-u32 WAVHeader::data_size_for(const Duration& dur) const {
-    const auto samples = dur.count() * this->sample_rate
-                       * Duration::period::num / Duration::period::den;
-
-    return samples * this->bits_per_sample * this->channels / 8;
-} // <-- u32 WAVHeader::data_size_for(dur) const
-
-} // <-- namespace cvt
 
 static constexpr uz av_ctx_buf_size = 1024;
 

@@ -2,6 +2,7 @@ export module qsefs.cue;
 
 import stl;
 import qsefs.cvt;
+import qsefs.metadata;
 
 namespace qsefs {
 
@@ -12,16 +13,7 @@ public:
     using Frames = stdc::duration<uz, std::ratio<1, 75>>;
 
     struct Track {
-        std::string artist;
-        std::string title;
-        std::string album;
-        std::string genre;
-        std::string disc_id;
-        std::string comment;
-        std::string composer;
-        std::string isrc;
-        int         year;
-        uz          index;
+        Metadata    meta;
         stdfs::path file;
 
         Frames start;

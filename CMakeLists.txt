@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED( VERSION 3.30 FATAL_ERROR )
 
 set(
     CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wno-missing-field-initializers"
+    "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wno-missing-field-initializers -freflection -std=c++26"
 )
 
 project(
@@ -11,7 +11,9 @@ project(
     DESCRIPTION "FUSE filesystem for CUE files support, inspired by trackfs"
 )
 
-set( CMAKE_CXX_MODULE_STD ON )
+set( CMAKE_CXX_MODULE_STD        ON )
+set( CMAKE_CXX_STANDARD          26 )
+set( CMAKE_CXX_STANDARD_REQUIRED ON )
 
 find_package( PkgConfig REQUIRED )
 pkg_check_modules( FUSE3 REQUIRED IMPORTED_TARGET fuse3 )

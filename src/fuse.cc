@@ -70,7 +70,9 @@ FUSE::read_dir(const stdfs::path& dir) const {
         if (const auto& cue = this->read_cue(*path)) {
             for (const auto& track : cue->get_tracks()) {
                 ret.push_back(
-                    std::format("{:02} - {}.wav", track.index, track.title)
+                    std::format(
+                        "{:02} - {}.wav", track.meta.index, track.meta.title
+                    )
                 );
                 for (auto& c : ret.back()) {
                     if (c == '/') {
