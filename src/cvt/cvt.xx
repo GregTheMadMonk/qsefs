@@ -3,8 +3,6 @@ export module qsefs.cvt;
 import qsefs.mmap;
 import stl;
 
-export import :format;
-
 extern "C" { // could just include headers, but don't want to
 
 struct AVCodec;
@@ -36,6 +34,8 @@ struct WAVHeader {
     static constexpr u32 riff_size = 4 + 4 + 4;
     static constexpr u32 fmt_size  = 24;
 
+    using Duration = stdc::microseconds;
+
     enum class Tag : u16 {
         PCM  = 1,
         IEEE = 3,
@@ -57,12 +57,12 @@ struct WAVHeader {
     /**
      * @brief Calculate data chunk size for specified duration
      */
-    [[nodiscard]] u32 data_size_for(const stdc::milliseconds& ms) const;
+    [[nodiscard]] u32 data_size_for(const Duration& ms) const;
 
     /**
      * @brief Calculate full file size for specified duration
      */
-    [[nodiscard]] u32 file_size_for(const stdc::milliseconds& ms) const
+    [[nodiscard]] u32 file_size_for(const Duration& ms) const
     { return riff_size + fmt_size + this->data_size_for(ms); }
 }; // <-- struct WAVHeader
 
@@ -72,12 +72,14 @@ export
 class AudioInput {
 public:
     struct Info {
-        int                                audio_stream;
-        std::unique_ptr<cvt::FormatTraits> fmt_traits;
+        using Duration = cvt::WAVHeader::Duration;
+
         struct {
-            stdc::milliseconds duration;
+            Duration duration;
         } file;
-        cvt::WAVHeader                     wav;
+
+        int            audio_stream;
+        cvt::WAVHeader wav;
     }; // <-- struct Info
 
     AudioInput(const stdfs::path& path);

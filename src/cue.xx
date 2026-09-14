@@ -54,6 +54,8 @@ private:
     stdfs::path        path;
 
     std::unordered_map<stdfs::path, AudioInput> base_files;
+
+    std::vector<std::pair<std::string, std::string>> unknown_tags;
 }; // <-- class Cue
 
 } // <-- namespace qsefs

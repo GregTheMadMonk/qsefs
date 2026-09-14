@@ -205,9 +205,16 @@ Cue::Cue(const stdfs::path& file) : path{file}, base_files{} {
                 auto p_parsed = stdv::split(point, ':')
                               | stdv::transform(
                                     [] (auto prt) {
-                                        return std::string_view{
+                                        auto sv = std::string_view{
                                             prt.begin(), prt.end()
                                         };
+                                        while (sv.starts_with(' ')) {
+                                            sv = sv.substr(1);
+                                        }
+                                        while (sv.ends_with(' ')) {
+                                            sv = sv.substr(0, sv.size() - 1);
+                                        }
+                                        return sv;
                                     }
                                 )
                               | dxx::utils::as<std::vector>;
@@ -261,7 +268,7 @@ Cue::Cue(const stdfs::path& file) : path{file}, base_files{} {
         try {
             procs.at(k)(unquote(v));
         } catch (const std::out_of_range& e) {
-            throw "Unknown CUE tag: `{}` (`{}`)"_err(k, v);
+            this->unknown_tags.emplace_back(k, v);
         } catch (const std::exception& e) {
             throw "Exception in CUE parser: {}"_err(e.what());
         }
@@ -302,62 +309,68 @@ Cue::Cue(const stdfs::path& file) : path{file}, base_files{} {
 } // <-- Cue::Cue(file)
 
 uz Cue::get_track_file_size(const Track& track) const {
-    const auto ms = stdc::duration_cast<stdc::milliseconds>(track.length());
+    using Duration = AudioInput::Info::Duration;
+    const auto dur = stdc::duration_cast<Duration>(track.length());
 
-    return this->base_files.at(track.file).wav_info().data_size_for(ms);
+    return this->base_files.at(track.file).wav_info().data_size_for(dur);
 } // <-- uz Cue::get_track_file_size(track)
 
 int Cue::read_track(const Track& t, std::span<char> buf, iptr off) const {
     const auto  full_size = this->get_track_file_size(t);
     auto& base            = this->base_files.at(t.file);
-    const auto  hdr       = base.wav_info().pack(full_size);
+    const auto& wav       = base.wav_info();
+    const auto  hdr       = wav.pack(full_size);
 
-    for (uz i = 0; i < buf.size(); ++i) {
-        const uz pos = off + i;
-        if (pos < hdr.size()) {
-            // Read the spoofed header at the start
-            buf[i] = std::bit_cast<char>(hdr[pos]);
-            continue;
-        }
+    // If some portion of the `buf` is supposed to be the header, read it
+    if (off < 0) {
+        throw "TODO"_err;
+    }
+    // Also TODO return EOF
 
-        // Read the demuxed audio data
-        // First, calculate the offset into the data segment of the WAV
-        const auto d_offs = pos - hdr.size();
-        // Bytes per sample
-        const auto bps = base.wav_info().channels
-                       * base.wav_info().bits_per_sample / 8;
-
-        // Recalculate the start sample
-        const auto s0 = 
-            stdc::duration_cast<stdc::milliseconds>(t.start).count()
-            * base.wav_info().sample_rate / 1000;
-
-        // Get sample index
-        const auto sample     = s0 + d_offs / bps;
-        // Get offset into the first sample
-        const auto sample_off = d_offs % bps;
-        // Get num samples to read (read the partial sample too if the read
-        // call buffer boundary is inside of a sample)
-        const auto bytes_to_read   = buf.size() - i;
-        const auto samples_to_read = (bytes_to_read + bps - 1) / bps;
-
-        base.seek_sample(sample);
-
-        const auto smp = base.read_samples(sample, samples_to_read);
-        const auto start = i;
-        while (i < buf.size() && (i - start + sample_off) < smp.size()) {
-            buf[i] = smp[i - start + sample_off];
-            ++i;
-        }
-
-        while (i < buf.size()) {
-            buf[i] = 0;
-        }
-
-        break;
+    auto uoff = static_cast<uz>(off);
+    uz   cur  = 0;
+    for (; uoff + cur < hdr.size() && cur < buf.size(); ++cur) {
+        buf[cur] = std::bit_cast<char>(hdr[uoff + cur]);
     }
 
-    return buf.size();
+    if (cur >= buf.size()) {
+        return buf.size();
+    }
+
+    // Header done, read the audio data
+    // Offset into the WAV audio data
+    const auto d_offs = uoff + cur - hdr.size();
+    // Bytes per sample
+    const auto bps = wav.channels * wav.bits_per_sample / 8;
+    // The track's first sample index in the original file
+    using Duration = AudioInput::Info::Duration;
+    const auto s0  = stdc::duration_cast<Duration>(t.start).count()
+                   * wav.sample_rate
+                   * Duration::period::num
+                   / Duration::period::den;
+
+    // The index of the first sample that should be read in this operation
+    const auto sample = s0 + d_offs / bps;
+    // Bytes to skip from this first sample
+    const auto sample_off = d_offs % bps;
+
+    // Number of bytes remaining to read
+    const auto bytes_to_read = buf.size() - cur;
+    // Number of samples to read
+    // May start and end on an incomplete sample - overshoot the raw division
+    // by two should be OK
+    const auto samples_to_read = (bytes_to_read + bps - 1) / bps + 1;
+
+    base.seek_sample(sample);
+    const auto smp = base.read_samples(sample, samples_to_read);
+    uz sample_cur = sample_off;
+    for (; cur < buf.size() && sample_cur < smp.size(); ++cur, ++sample_cur) {
+        buf[cur] = smp[sample_cur];
+    }
+
+    // Might've encountered the end of the stream, return the number of bytes
+    // read
+    return cur;
 } // <-- int Cue::read_track(t, buf, off)
 
 } // <-- namespace qsefs
