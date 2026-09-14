@@ -1,0 +1,16 @@
+/**
+ * @brief Standard library + shortcuts
+ */
+export module stl;
+
+export import std;
+export import std.compat;
+
+export import dxx.cstd;
+export import dxx.cstd.compat;
+export import dxx.cstd.fixed;
+
+export namespace stdc  = std::chrono;
+export namespace stdfs = std::filesystem;
+export namespace stdr  = std::ranges;
+export namespace stdv  = std::views;

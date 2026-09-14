@@ -1,0 +1,59 @@
+export module qsefs.cue;
+
+import stl;
+import qsefs.cvt;
+
+namespace qsefs {
+
+export
+class Cue {
+public:
+    // CUE has 75 frames per second
+    using Frames = stdc::duration<uz, std::ratio<1, 75>>;
+
+    struct Track {
+        std::string artist;
+        std::string title;
+        std::string album;
+        std::string genre;
+        std::string disc_id;
+        std::string comment;
+        std::string composer;
+        std::string isrc;
+        int         year;
+        uz          index;
+        stdfs::path file;
+
+        Frames start;
+        Frames end;
+
+        uz file_size;
+
+        [[nodiscard]]
+        inline Frames length() const
+        { return this->end - this->start; }
+    }; // <-- struct Track
+
+    Cue(const stdfs::path& file);
+
+    [[nodiscard]] inline const auto& get_text() const { return this->data; }
+    [[nodiscard]] inline const auto& get_tracks() const { return this->tracks; }
+
+    [[nodiscard]] uz get_track_file_size(const Track& track) const;
+
+    [[nodiscard]]
+    uz get_track_file_size(uz idx) const
+    { return this->get_track_file_size(this->tracks.at(idx)); }
+
+    [[nodiscard]]
+    int read_track(const Track& track, std::span<char> buf, iptr off) const;
+
+private:
+    std::string        data;
+    std::vector<Track> tracks;
+    stdfs::path        path;
+
+    std::unordered_map<stdfs::path, AudioInput> base_files;
+}; // <-- class Cue
+
+} // <-- namespace qsefs

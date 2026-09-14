@@ -1,0 +1,35 @@
+module;
+
+#include <cmath> // prevent conflicts with `extern "C"` on GCC
+
+extern "C" {
+#include <libavutil/samplefmt.h>
+} // <-- extern "C"
+
+export module qsefs.cvt:format;
+
+import stl;
+
+namespace qsefs::cvt {
+
+struct FormatTraits {
+    [[nodiscard]] virtual std::string_view name() const = 0;
+    /**
+     * @brief Only PCM and IEEE formats are supported
+     *
+     * So, `!is_ieee()` should be treated as `is_pcm()`
+     */
+    [[nodiscard]] virtual bool is_ieee() const = 0;
+
+    [[nodiscard]] virtual bool is_packed() const = 0;
+
+    [[nodiscard]] virtual u16 bits_per_sample() const = 0;
+
+    virtual ~FormatTraits() = default;
+}; // <-- struct FormatTraits
+
+export
+[[nodiscard]]
+std::unique_ptr<FormatTraits> get_format(AVSampleFormat fmt);
+
+} // <-- namespace qsefs::cvt

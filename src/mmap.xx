@@ -1,0 +1,35 @@
+export module qsefs.mmap;
+
+import dxx.utils;
+import stl;
+
+namespace qsefs {
+
+export
+class MappedFile {
+public:
+    MappedFile(const stdfs::path& name);
+
+    MappedFile(const MappedFile&) = delete;
+    MappedFile& operator=(const MappedFile&) = delete;
+
+    MappedFile(MappedFile&& other);
+    MappedFile& operator=(MappedFile&& other);
+
+    ~MappedFile();
+
+    [[nodiscard]] inline uz size() const { return this->len; }
+
+    [[nodiscard]]
+    inline std::span<const u8> data() const
+    { return { this->mapping, this->len }; }
+
+private:
+    void reset();
+
+    dxx::utils::FileDescriptor file;
+    u8* mapping;
+    uz  len;
+}; // <-- struct MappedFile
+
+} // <-- namespace qsefs

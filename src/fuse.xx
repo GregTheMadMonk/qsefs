@@ -1,0 +1,71 @@
+module;
+
+#include <sys/stat.h>
+
+export module qsefs.fuse;
+
+import stl;
+
+import qsefs.cue;
+
+namespace qsefs {
+
+export
+class FUSE {
+private:
+    using CueCacheEntry = std::expected<Cue, std::string>;
+
+public:
+    static FUSE& get();
+
+    void set_source(const stdfs::path& p);
+    void set_target(const stdfs::path& p);
+
+    inline void set_ignore_dotfiles(bool b) { this->ignore_dotfiles = b; }
+
+    int run();
+
+private:
+    FUSE() = default;
+
+    FUSE(const FUSE&)            = delete;
+    FUSE& operator=(const FUSE&) = delete;
+
+    using DirEntry = std::string;
+
+    [[nodiscard]]
+    std::expected<std::vector<DirEntry>, int>
+    read_dir(const stdfs::path& dir) const;
+
+    [[nodiscard]] const CueCacheEntry& read_cue(const stdfs::path& cue) const;
+
+    /**
+     * @brief Get track from filename and CUE name
+     *
+     * @param path track path in the virtual filesystem
+     * @param cue  CUE virtual directory path. This parameter is, strictly
+     *             speaking, redundant, and is just equal to the parent of
+     *             `path`. Used to avoid double work at call site
+     */
+    [[nodiscard]]
+    std::optional<const Cue::Track&>
+    get_track(const stdfs::path& path, const stdfs::path& cue) const;
+
+    [[nodiscard]]
+    std::optional<struct stat> getattr(const stdfs::path& p) const;
+
+    [[nodiscard]]
+    int read(const stdfs::path& p, std::span<char> buf, off_t offset) const;
+
+    [[nodiscard]]
+    std::optional<stdfs::path> real_path(const stdfs::path& p) const;
+
+    stdfs::path source_path;
+    stdfs::path target_path;
+    bool        ignore_dotfiles;
+
+    mutable
+    std::unordered_map<std::string, CueCacheEntry> cache;
+}; // <-- class FUSE
+
+} // <-- namespace qsefs

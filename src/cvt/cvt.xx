@@ -1,0 +1,130 @@
+export module qsefs.cvt;
+
+import qsefs.mmap;
+import stl;
+
+export import :format;
+
+extern "C" { // could just include headers, but don't want to
+
+struct AVCodec;
+struct AVCodecContext;
+struct AVFormatContext;
+struct AVFrame;
+struct AVIOContext;
+struct AVPacket;
+
+} // <-- extern "C"
+
+namespace qsefs {
+
+namespace cvt {
+
+/**
+ * @brief A type that is capable of freeing resources allocated by libav
+ */
+struct AVDeleter {
+    void operator()(AVIOContext*) const;
+    void operator()(AVFormatContext*) const;
+    void operator()(AVCodecContext*) const;
+    void operator()(AVPacket*) const;
+    void operator()(AVFrame*) const;
+    void operator()(void*) const;
+}; // <-- struct AVDeleter
+
+struct WAVHeader {
+    static constexpr u32 riff_size = 4 + 4 + 4;
+    static constexpr u32 fmt_size  = 24;
+
+    enum class Tag : u16 {
+        PCM  = 1,
+        IEEE = 3,
+        // others not supported
+    };
+
+    Tag tag;
+    u16 channels;
+    u32 sample_rate;
+    u16 bits_per_sample;
+
+    /**
+     * @brief Pack the WAV headercodec
+     *
+     * @param data_size the size of the WAV PCM data section
+     */
+    [[nodiscard]] std::vector<u8> pack(u32 data_size) const;
+
+    /**
+     * @brief Calculate data chunk size for specified duration
+     */
+    [[nodiscard]] u32 data_size_for(const stdc::milliseconds& ms) const;
+
+    /**
+     * @brief Calculate full file size for specified duration
+     */
+    [[nodiscard]] u32 file_size_for(const stdc::milliseconds& ms) const
+    { return riff_size + fmt_size + this->data_size_for(ms); }
+}; // <-- struct WAVHeader
+
+} // <-- namespace cvt
+
+export
+class AudioInput {
+public:
+    struct Info {
+        int                                audio_stream;
+        std::unique_ptr<cvt::FormatTraits> fmt_traits;
+        struct {
+            stdc::milliseconds duration;
+        } file;
+        cvt::WAVHeader                     wav;
+    }; // <-- struct Info
+
+    AudioInput(const stdfs::path& path);
+
+    [[nodiscard]]
+    inline const auto& wav_info() const { return this->info.wav; }
+
+    [[nodiscard]]
+    inline const auto& file_info() const { return this->info.file; }
+
+    /**
+     * @brief I'm sorry for kind of breaking const-correctness here
+     */
+    void seek_sample(uz sample_idx) const;
+
+    /**
+     * @brief Read the samples from the file at the current offset
+     */
+    [[nodiscard]] std::vector<u8> read_samples(uz idx, uz num) const;
+
+private:
+    static int readf(void* opaque, u8* buf, int buf_size);
+    static iptr seekf(void* opaque, iptr offset, int whence);
+
+    using IO     = std::unique_ptr<AVIOContext, cvt::AVDeleter>;
+    using Format = std::unique_ptr<AVFormatContext, cvt::AVDeleter>;
+    using Buf    = std::unique_ptr<void, cvt::AVDeleter>;
+    using CodecC = std::unique_ptr<AVCodecContext, cvt::AVDeleter>;
+    using Packet = std::unique_ptr<AVPacket, cvt::AVDeleter>;
+    using Frame  = std::unique_ptr<AVFrame, cvt::AVDeleter>;
+
+    /**
+     * @brief The file itself
+     */
+    MappedFile     file;
+    /**
+     * @brief The seek position to start reading from
+     */
+    uz             seek;
+    Buf            buf;
+    IO             io;
+    Format         fmt;
+    CodecC         cdx;
+
+    const AVCodec* codec;
+
+    Info           info;
+}; // <-- struct AudioInput
+
+} // <-- namespace qsefs
