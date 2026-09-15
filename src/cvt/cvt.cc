@@ -24,20 +24,17 @@ AudioInput::AudioInput(const stdfs::path& p)
     : path{p}
     , file{p}
     , seek{0}
-    , buf{
-          [] {
-              auto* ret = av_malloc(av_ctx_buf_size);
-              if (ret == nullptr) {
+    , io{
+          [this] {
+              auto* buf = av_malloc(av_ctx_buf_size);
+              if (buf == nullptr) {
                   throw "Cannot av_malloc a buffer of {} bytes"_err
                         (av_ctx_buf_size);
               }
-              return ret;
-          } ()
-      }
-    , io{
-          [this] {
+
+              // avio_alloc_context takes ownersip of buf, don't need to free
               auto ret = avio_alloc_context(
-                  reinterpret_cast<u8*>(this->buf.get()),
+                  reinterpret_cast<u8*>(buf),
                   av_ctx_buf_size,
                   0, // read-only
                   this,
@@ -180,7 +177,7 @@ void AudioInput::seek_sample(uz sample_idx) const {
     );
 
     if (r < 0) {
-        throw "av_seek_frame() error: {}"_err(r);
+        std::println(std::cerr, "av_seek_frame() error: {}", r);
     }
 
     avcodec_flush_buffers(this->cdx.get());
@@ -211,6 +208,11 @@ std::vector<u8> AudioInput::read_samples(uz idx, uz num) const {
 
         // Decode the packet
         if (auto r = avcodec_send_packet(this->cdx.get(), pk.get()); r < 0) {
+            if (r == AVERROR_INVALIDDATA) {
+                // Corrupted file, report but don't crash the program
+                std::println(std::cerr, "send packet AVERROR_INVALIDDATA");
+                return ret;
+            }
             throw "avcodec_send_packet() error {}"_err(r);
         }
 

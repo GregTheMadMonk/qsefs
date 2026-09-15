@@ -109,7 +109,6 @@ private:
 
     using IO     = std::unique_ptr<AVIOContext, cvt::AVDeleter>;
     using Format = std::unique_ptr<AVFormatContext, cvt::AVDeleter>;
-    using Buf    = std::unique_ptr<void, cvt::AVDeleter>;
     using CodecC = std::unique_ptr<AVCodecContext, cvt::AVDeleter>;
     using Packet = std::unique_ptr<AVPacket, cvt::AVDeleter>;
     using Frame  = std::unique_ptr<AVFrame, cvt::AVDeleter>;
@@ -126,7 +125,6 @@ private:
      * @brief The seek position to start reading from
      */
     uz             seek;
-    Buf            buf;
     IO             io;
     Format         fmt;
     CodecC         cdx;

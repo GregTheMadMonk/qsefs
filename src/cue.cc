@@ -325,20 +325,31 @@ int Cue::read_track(const Track& t, std::span<char> buf, iptr off) const {
     const auto& wav       = base.wav_info();
     const auto  hdr       = wav.pack(full_size, t.meta);
 
+    // TODO: Proper error codes
+
     // If some portion of the `buf` is supposed to be the header, read it
     if (off < 0) {
         throw "TODO"_err;
     }
-    // Also TODO return EOF
 
     auto uoff = static_cast<uz>(off);
+
+    if (uoff > full_size) {
+        return 0;
+    }
+
+    uz buf_size = buf.size();
+    if (off + buf.size() > full_size) {
+        buf_size -= (off + buf.size() - full_size);
+    }
+
     uz   cur  = 0;
-    for (; uoff + cur < hdr.size() && cur < buf.size(); ++cur) {
+    for (; uoff + cur < hdr.size() && cur < buf_size; ++cur) {
         buf[cur] = std::bit_cast<char>(hdr[uoff + cur]);
     }
 
-    if (cur >= buf.size()) {
-        return buf.size();
+    if (cur >= buf_size) {
+        return buf_size;
     }
 
     // Header done, read the audio data
@@ -359,7 +370,7 @@ int Cue::read_track(const Track& t, std::span<char> buf, iptr off) const {
     const auto sample_off = d_offs % bps;
 
     // Number of bytes remaining to read
-    const auto bytes_to_read = buf.size() - cur;
+    const auto bytes_to_read = buf_size - cur;
     // Number of samples to read
     // May start and end on an incomplete sample - overshoot the raw division
     // by two should be OK
@@ -368,7 +379,7 @@ int Cue::read_track(const Track& t, std::span<char> buf, iptr off) const {
     base.seek_sample(sample);
     const auto smp = base.read_samples(sample, samples_to_read);
     uz sample_cur = sample_off;
-    for (; cur < buf.size() && sample_cur < smp.size(); ++cur, ++sample_cur) {
+    for (; cur < buf_size && sample_cur < smp.size(); ++cur, ++sample_cur) {
         buf[cur] = smp[sample_cur];
     }
 

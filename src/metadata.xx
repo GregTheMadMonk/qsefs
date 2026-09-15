@@ -35,7 +35,7 @@ struct Metadata {
     std::string isrc;
     [[=wav_tag("ICRD")]]
     int         year;
-    [[=wav_tag("ITRK")]]
+    [[=wav_tag("ITRK"), =wav_tag("TRCK"), =wav_tag("IPRT")]]
     uz          index;
 }; // <-- struct Metadata
 

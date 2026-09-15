@@ -2,6 +2,7 @@ module;
 
 #include <errno.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 module qsefs.fuse;
 
@@ -143,9 +144,11 @@ FUSE::read_cue(const stdfs::path& cue) const {
 
     const auto now = stdc::steady_clock::now();
     try {
-        this->cache.try_emplace(cue.string(), now, cue);
+        auto [ it, _ ] = this->cache.try_emplace(cue.string(), now, cue);
+        it->second.fetched = now;
     } catch (const std::exception& e) {
-        this->cache.try_emplace(cue.string(), now, std::unexpected(e.what()));
+        auto [ it, _ ] = this->cache.try_emplace(cue.string(), now, std::unexpected(e.what()));
+        it->second.fetched = now;
     }
 
     return this->cache.at(cue.string()).data;
@@ -189,6 +192,8 @@ std::optional<struct stat> FUSE::getattr(const stdfs::path& p) const {
         struct stat ret{
             .st_nlink = 1,
             .st_mode  = 0444,
+            .st_uid   = getuid(),
+            .st_gid   = getgid(),
         }; // <-- ret
 
         if (stdfs::is_directory(*path) || is_cue(*path)) {
