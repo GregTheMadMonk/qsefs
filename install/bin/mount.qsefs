@@ -2,7 +2,7 @@
 
 SOURCE="$1"
 shift
-TARGET="$2"
+TARGET="$1"
 shift
 
 if [ -n "$@" ]
