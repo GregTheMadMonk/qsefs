@@ -1,0 +1,13 @@
+#!/bin/env sh
+
+SOURCE="$1"
+shift
+TARGET="$2"
+shift
+
+if [ -n "$@" ]
+then
+    echo "Warning: ignoring extra arguments: $@"
+fi
+
+qsefs "$SOURCE" "$TARGET"

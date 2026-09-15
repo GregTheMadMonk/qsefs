@@ -48,8 +48,6 @@ target_link_libraries(
 
 if( QSEFS_INSTALL )
     install( TARGETS qsefs )
-    # Create mount. symlink to allow to mount from fstab
-    install( CODE "execute_process( WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/bin/\" COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"$<TARGET_FILE_NAME:qsefs>\" \"${CMAKE_INSTALL_PREFIX}/bin/mount.$<TARGET_FILE_NAME:qsefs>\" )" )
 
     file( GLOB INST_SUBDIRS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/install/" "install/*" )
     foreach( INST_SUBDIR ${INST_SUBDIRS} )
@@ -57,6 +55,7 @@ if( QSEFS_INSTALL )
             install(
                 DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}/install/${INST_SUBDIR}"
                 DESTINATION "${CMAKE_INSTALL_PREFIX}"
+                USE_SOURCE_PERMISSIONS
             )
         endif()
     endforeach()
