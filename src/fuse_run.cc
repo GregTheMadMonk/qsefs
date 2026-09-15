@@ -66,14 +66,19 @@ int FUSE::run() {
     std::vector<const char*> argv{};
 
     static const std::string type{"qsefs"};
-    static const std::string fgrun{"-f"};
-    // Single-threaded flag. Coward. TODO: run in multithreaded mode
-    static const std::string fnomt{"-s"};
+    static const std::vector<std::string> args{
+        "-f",
+        // Single-threaded flag. Coward. TODO: run in multithreaded mode
+        "-s",
+        // Allow other users to view - it's readonly anyway
+        "-o", "allow_other"
+    };
 
     argv.push_back(type.data());
     argv.push_back(this->target_path.c_str());
-    argv.push_back(fgrun.data());
-    argv.push_back(fnomt.data());
+    for (const auto& s : args) {
+        argv.push_back(s.data());
+    }
 
     return fuse_main(
         argv.size(),
