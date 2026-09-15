@@ -30,7 +30,7 @@ public:
     // TODO: should this also affect hidden_files?
     inline void set_show_base_files(bool b) { this->show_base_files = b; }
 
-    int run();
+    int run(std::span<char*> argv);
 
 private:
     FUSE() = default;

@@ -2,18 +2,21 @@ import dxx.errors;
 import qsefs.fuse;
 import stl;
 
+using namespace dxx::errors::literals;
+
 int main(int argc, char** argv) {
     const auto usage = [prog_name=argv[0]] {
-        std::println(std::cerr, "Usage: {} <source_dir> <target_dir>", prog_name);
+        std::println(
+            std::cerr,
+            "Usage: {} <source_dir> <target_dir> [FUSE arguments...]",
+            prog_name
+        );
     }; // <-- usage()
 
     try {
-        if (argc != 3) {
+        if (argc < 3) {
             usage();
-            throw std::runtime_error{
-                argc < 3 ? "Too few arguments"
-                         : "Too many arguments"
-            };
+            throw "Too few arguments"_err;
         }
 
         auto& fuse = qsefs::FUSE::get();
@@ -26,7 +29,7 @@ int main(int argc, char** argv) {
         fuse.set_cache_size(50);
         fuse.set_show_base_files(false);
 
-        return fuse.run();
+        return fuse.run(std::span{argv + 3, static_cast<uz>(argc) - 3});
     } catch (const std::exception& e) {
         std::println(std::cerr, "ERROR: {}", e.what());
         return EXIT_FAILURE;

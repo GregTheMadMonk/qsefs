@@ -9,7 +9,7 @@ module qsefs.fuse;
 
 namespace qsefs {
 
-int FUSE::run() {
+int FUSE::run(std::span<char*> argv_ext) {
     const fuse_operations ops{
         .getattr =
             [] (
@@ -67,17 +67,17 @@ int FUSE::run() {
 
     static const std::string type{"qsefs"};
     static const std::vector<std::string> args{
-        "-f",
         // Single-threaded flag. Coward. TODO: run in multithreaded mode
         "-s",
-        // Allow other users to view - it's readonly anyway
-        "-o", "allow_other"
     };
 
     argv.push_back(type.data());
     argv.push_back(this->target_path.c_str());
     for (const auto& s : args) {
         argv.push_back(s.data());
+    }
+    for (char* s : argv_ext) {
+        argv.push_back(s);
     }
 
     return fuse_main(
@@ -86,6 +86,6 @@ int FUSE::run() {
         &ops,
         nullptr
     );
-} // <-- void FUSE::run()
+} // <-- void FUSE::run(argv_ext)
 
 } // <-- namespace qsefs
