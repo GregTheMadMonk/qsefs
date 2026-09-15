@@ -1,0 +1,32 @@
+pkgname=qsefs-git
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="FUSE filesystem for CUE filesheets support"
+arch=(x86_64)
+url="https://github.com/gregthemadmonk/qsefs.git"
+license=("GPL-3.0")
+depends=("ffmpeg" "fuse3")
+makedepends=("cmake" "ninja" "gcc" "pkgconf" "git")
+source=("$pkgname::git+$url#branch=main")
+md5sums=("SKIP")
+
+pkgver() {
+    cd "$pkgname"
+    echo "$pkgver.g$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+    mkdir "$pkgname/build" || echo "Build directory already exists"
+    cd "$pkgname/build"
+    cmake ..  -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPERIMENTAL_CXX_IMPORT_STD="f35a9ac6-8463-4d38-8eec-5d6008153e7d" -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_INSTALL_PREFIX="$pkgdir/usr" -DQSEFS_INSTALL=ON
+}
+
+build() {
+    cd "$pkgname/build"
+    ninja
+}
+
+package() {
+    cd "$pkgname/build"
+    ninja install
+}
