@@ -18,6 +18,7 @@ pkgver() {
 prepare() {
     mkdir "$pkgname/build" || echo "Build directory already exists"
     cd "$pkgname/build"
+    git submodule update --init --recursive
     cmake ..  -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPERIMENTAL_CXX_IMPORT_STD="f35a9ac6-8463-4d38-8eec-5d6008153e7d" -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc -DCMAKE_INSTALL_PREFIX="$pkgdir/usr" -DQSEFS_INSTALL=ON
 }
 
