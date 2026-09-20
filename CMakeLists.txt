@@ -11,7 +11,8 @@ project(
     DESCRIPTION "FUSE filesystem for CUE files support, inspired by trackfs"
 )
 
-option( QSEFS_INSTALL OFF )
+option( QSEFS_INSTALL  OFF )
+option( QSEFS_SELFTEST OFF )
 
 set( CMAKE_CXX_MODULE_STD        ON )
 set( CMAKE_CXX_STANDARD          26 )
@@ -28,12 +29,12 @@ include( CPM.cmake/cmake/CPM.cmake )
 set( DXX_COMPILE_FEATURES cxx_std_26 )
 CPMAddPackage( "gh:gregthemadmonk/dot-xx#main" )
 
-file( GLOB_RECURSE SRC_XX CONFIGURE_DEPENDS src/*.xx )
-file( GLOB_RECURSE SRC_CC CONFIGURE_DEPENDS src/*.cc )
+file( GLOB_RECURSE SRC_XX CONFIGURE_DEPENDS src/qsefs/*.xx )
+file( GLOB_RECURSE SRC_CC CONFIGURE_DEPENDS src/qsefs/*.cc )
 
 set_source_files_properties( ${SRC_XX} PROPERTIES LANGUAGE CXX )
 
-add_executable( qsefs ${SRC_CC} )
+add_library( qsefs STATIC ${SRC_CC} )
 target_sources(
     qsefs PUBLIC
     FILE_SET qsefs_mod
@@ -42,9 +43,21 @@ target_sources(
 )
 target_compile_features( qsefs PRIVATE cxx_std_26 )
 target_link_libraries(
-    qsefs PRIVATE
-    dot-xx::all PkgConfig::FUSE3 PkgConfig::LIBAV
+    qsefs
+    PUBLIC  dot-xx::all
+    PRIVATE PkgConfig::FUSE3 PkgConfig::LIBAV
 )
+
+add_executable( qsefs-mount src/main.cc )
+set_target_properties( qsefs-mount PROPERTIES OUTPUT_NAME "qsefs" )
+target_link_libraries( qsefs-mount PRIVATE qsefs )
+target_compile_features( qsefs-mount PRIVATE cxx_std_26 )
+
+if( QSEFS_SELFTEST )
+    file( GLOB_RECURSE TST_CC CONFIGURE_DEPENDS test/*.cc )
+    add_executable( selftest ${TST_CC} )
+    target_link_libraries( selftest PRIVATE qsefs dot-xx::selftest-main )
+endif()
 
 if( QSEFS_INSTALL )
     install( TARGETS qsefs )
