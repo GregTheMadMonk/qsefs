@@ -66,11 +66,11 @@ static auto parse_kv_cue(std::string_view data) {
     return ret;
 } // <-- auto parse_kv_cue(data)
 
-Cue::Cue(const stdfs::path& file) : path{file}, base_files{} {
-    std::ifstream cue{this->path};
+Cue::Cue(const stdfs::path& file) : base_files{} {
+    std::ifstream cue{file};
 
     if (!cue.good()) {
-        throw "Failed to open {}"_err(this->path);
+        throw "Failed to open {}"_err(file);
     }
 
     this->data = {
@@ -281,11 +281,11 @@ Cue::Cue(const stdfs::path& file) : path{file}, base_files{} {
         [] (auto& t) { return t.meta.index; }
     );
 
-    std::println("Successfully parsed {}", this->path);
+    std::println("Successfully parsed {}", file);
 
     for (const auto& track : this->tracks) {
         auto [ ref, is_new ] = this->base_files.emplace(
-            track.file, this->path.parent_path() / track.file
+            track.file, file.parent_path() / track.file
         );
 
         if (!is_new) {

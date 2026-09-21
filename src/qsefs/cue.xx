@@ -49,7 +49,6 @@ public:
 private:
     std::string        data;
     std::vector<Track> tracks;
-    stdfs::path        path;
 
     std::unordered_map<stdfs::path, AudioInput> base_files;
 
