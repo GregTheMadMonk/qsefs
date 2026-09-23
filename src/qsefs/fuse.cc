@@ -129,7 +129,7 @@ FUSE::read_dir(const stdfs::path& dir) const {
             }
         }
 
-        auto str = path.native();
+        auto str = path.filename().native();
 
         if (this->ignore_dotfiles && str.starts_with('.')) {
             continue;
