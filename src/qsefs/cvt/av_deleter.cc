@@ -1,13 +1,6 @@
 module;
 
-#include <cmath> // prevent conflicts with `extern "C"` on GCC
-
-extern "C" {
-#include <libavformat/avio.h>
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-#include <libavutil/mem.h>
-} // <-- extern "C"
+#include "av_headers.hh"
 
 module qsefs.cvt;
 

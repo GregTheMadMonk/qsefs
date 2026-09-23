@@ -1,13 +1,6 @@
 module;
 
-#include <cmath> // prevent conflicts with `extern "C"` on GCC
-
-extern "C" {
-#include <libavformat/avio.h>
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-#include <libavutil/mem.h>
-} // <-- extern "C"
+#include "av_headers.hh"
 
 module qsefs.cvt;
 
@@ -308,7 +301,7 @@ int AudioInput::readf(void* opaque, u8* buf, int buf_size) {
     return buf_size;
 } // <-- void AudioInput::readf(opaque, buf, buf_size)
 
-iptr AudioInput::seekf(void* opaque, iptr offset, int whence) {
+i64 AudioInput::seekf(void* opaque, i64 offset, int whence) {
     auto& in = *reinterpret_cast<AudioInput*>(opaque);
 
     if (whence & AVSEEK_SIZE) {

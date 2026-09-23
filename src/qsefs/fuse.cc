@@ -14,15 +14,19 @@ using namespace std::literals;
 namespace qsefs {
 
 static void check_dir_exists(const stdfs::path& p) {
-    if (!stdfs::exists(p) || !stdfs::is_directory(p)) {
+    if (!stdfs::exists(p)) {
         throw "Directory doesn't exist: {}"_err(p);
+    }
+
+    if (!stdfs::is_directory(p)) {
+        throw "Not a directory: {}"_err(p);
     }
 } // <-- void check_dir_exists(p)
 
 [[nodiscard]]
 static bool is_ext(const stdfs::path& p, std::string_view ext) {
     return stdr::equal(
-        p.extension().string(),
+        p.extension().native(),
         ext,
         [] (char a, char b) { return std::tolower(a) == std::tolower(b); }
     );
@@ -51,6 +55,11 @@ void FUSE::set_source(const stdfs::path& p) {
 
 void FUSE::set_target(const stdfs::path& p) {
     check_dir_exists(p);
+
+    if (!stdfs::is_empty(p)) {
+        throw "Directory not empty: {}"_err(p);
+    }
+
     this->target_path = p;
 } // <-- void FUSE::set_target(p)
 
@@ -89,7 +98,7 @@ FUSE::read_dir(const stdfs::path& dir) const {
         for (const auto& e : stdfs::directory_iterator(path->parent_path())) {
             const auto& p = e.path();
             if (is_img(p)) {
-                ret.push_back(p.filename().string());
+                ret.push_back(p.filename().native());
             }
         }
 
@@ -120,7 +129,7 @@ FUSE::read_dir(const stdfs::path& dir) const {
             }
         }
 
-        auto str = path.filename().string();
+        auto str = path.native();
 
         if (this->ignore_dotfiles && str.starts_with('.')) {
             continue;
@@ -144,14 +153,14 @@ FUSE::read_cue(const stdfs::path& cue) const {
 
     const auto now = stdc::steady_clock::now();
     try {
-        auto [ it, _ ] = this->cache.try_emplace(cue.string(), now, cue);
+        auto [ it, _ ] = this->cache.try_emplace(cue.native(), now, cue);
         it->second.fetched = now;
     } catch (const std::exception& e) {
-        auto [ it, _ ] = this->cache.try_emplace(cue.string(), now, std::unexpected(e.what()));
+        auto [ it, _ ] = this->cache.try_emplace(cue.native(), now, std::unexpected(e.what()));
         it->second.fetched = now;
     }
 
-    return this->cache.at(cue.string()).data;
+    return this->cache.at(cue.native()).data;
 } // <-- FUSE::read_cue(cue) const
 
 std::optional<const Cue::Track&>
@@ -166,7 +175,7 @@ FUSE::get_track(const stdfs::path& path, const stdfs::path& cue_path) const {
     //
     // Consider, however, that the path might be bogus because
     // of e.g. user typo
-    const auto name = path.filename().string();
+    const auto name = path.filename().native();
     if (
         name.size() < 2
         || !std::isdigit(name.at(0))

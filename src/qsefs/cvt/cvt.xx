@@ -105,7 +105,7 @@ public:
 
 private:
     static int readf(void* opaque, u8* buf, int buf_size);
-    static iptr seekf(void* opaque, iptr offset, int whence);
+    static i64 seekf(void* opaque, i64 offset, int whence);
 
     using IO     = std::unique_ptr<AVIOContext, cvt::AVDeleter>;
     using Format = std::unique_ptr<AVFormatContext, cvt::AVDeleter>;
