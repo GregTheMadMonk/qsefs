@@ -6,7 +6,12 @@ module qsefs.cvt;
 
 namespace qsefs::cvt {
 
-void AVDeleter::operator()(AVIOContext* io) const { av_free(io);  }
+void AVDeleter::operator()(AVIOContext* io) const {
+    if (io->buffer != nullptr) {
+        av_free(io->buffer);
+    }
+    avio_context_free(&io);
+} // <-- AVDeleter::operator(AVIOContext)
 void AVDeleter::operator()(AVFormatContext* fmt) const
 { avformat_close_input(&fmt); }
 void AVDeleter::operator()(AVCodecContext* cdx) const

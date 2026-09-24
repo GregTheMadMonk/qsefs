@@ -7,21 +7,21 @@ using namespace dxx::errors::literals;
 
 namespace qsefs {
 
-static constexpr auto* digits = "0123456789";
+namespace {
 
-static std::string_view unquote(std::string_view sv) {
+constexpr auto* digits = "0123456789";
+
+std::string_view unquote(std::string_view sv) {
     if (sv.starts_with('"') && sv.ends_with('"')) {
         return sv.substr(1, sv.size() - 2);
     }
     return sv;
 } // <-- string_view unquote(sv)
 
-static void parse_field(std::string_view val, std::string& out) {
-    out = val;
-} // <-- static void parse_field(val, string)
+void parse_field(std::string_view val, std::string& out) { out = val; }
 
 template <std::integral T>
-static void parse_field(std::string_view val, T& out) {
+void parse_field(std::string_view val, T& out) {
     const auto res = std::from_chars(val.cbegin(), val.cend(), out);
 
     switch (res.ec) {
@@ -40,7 +40,7 @@ static void parse_field(std::string_view val, T& out) {
     }
 } // <-- static void parse_field(val, integral)
 
-static auto parse_kv_cue(std::string_view data) {
+auto parse_kv_cue(std::string_view data) {
     uz tag_off  = 0;
     uz tag_size = 0;
     uz val_off  = 0;
@@ -89,6 +89,8 @@ static auto parse_kv_cue(std::string_view data) {
 
     return ret;
 } // <-- auto parse_kv_cue(data)
+
+} // <-- namespace <anonymous>
 
 std::vector<Cue::Track> Cue::parse(
     std::string_view data,
