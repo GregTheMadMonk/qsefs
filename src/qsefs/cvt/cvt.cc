@@ -11,7 +11,7 @@ using namespace dxx::errors::literals;
 
 namespace qsefs {
 
-static constexpr uz av_ctx_buf_size = 1024;
+static constexpr uz av_ctx_buf_size = 1024 * 4;
 
 AudioInput::AudioInput(const stdfs::path& p)
     : path{p}

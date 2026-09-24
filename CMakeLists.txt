@@ -60,9 +60,9 @@ if( QSEFS_SELFTEST )
 endif()
 
 if( QSEFS_INSTALL )
-    install( TARGETS qsefs )
+    install( TARGETS qsefs-mount )
     # Create mount. symlink to allow to mount from fstab
-    install( CODE "execute_process( WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/bin/\" COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"$<TARGET_FILE_NAME:qsefs>\" \"${CMAKE_INSTALL_PREFIX}/bin/mount.$<TARGET_FILE_NAME:qsefs>\" )" )
+    install( CODE "execute_process( WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/bin/\" COMMAND \"${CMAKE_COMMAND}\" -E create_symlink \"$<TARGET_FILE_NAME:qsefs-mount>\" \"${CMAKE_INSTALL_PREFIX}/bin/mount.$<TARGET_FILE_NAME:qsefs-mount>\" )" )
 
     file( GLOB INST_SUBDIRS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/install/" "install/*" )
     foreach( INST_SUBDIR ${INST_SUBDIRS} )

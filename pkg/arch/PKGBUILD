@@ -1,5 +1,6 @@
 pkgname=qsefs-git
-pkgver=0.0.1
+pkgver_=0.0.1
+pkgver="$pkgver_"
 pkgrel=1
 pkgdesc="FUSE filesystem for CUE filesheets support"
 arch=(x86_64)
@@ -12,7 +13,7 @@ md5sums=("SKIP")
 
 pkgver() {
     cd "$pkgname"
-    echo "$pkgver.g$(git rev-parse --short HEAD)"
+    echo "$pkgver_.g$(git rev-parse --short HEAD)"
 }
 
 prepare() {
