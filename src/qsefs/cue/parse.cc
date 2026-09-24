@@ -16,6 +16,30 @@ static std::string_view unquote(std::string_view sv) {
     return sv;
 } // <-- string_view unquote(sv)
 
+static void parse_field(std::string_view val, std::string& out) {
+    out = val;
+} // <-- static void parse_field(val, string)
+
+template <std::integral T>
+static void parse_field(std::string_view val, T& out) {
+    const auto res = std::from_chars(val.cbegin(), val.cend(), out);
+
+    switch (res.ec) {
+    using enum std::errc;
+    case invalid_argument:
+        throw "Not an integer: {}"_err(val);
+    case result_out_of_range:
+        throw "Not representable by {}: {}"_err(
+            stdm::display_string_of(^^T),
+            val
+        );
+    default:
+        if (res.ec != std::errc{}) {
+            throw "Unexpected error after std::from_chars on {}"_err(val);
+        }
+    }
+} // <-- static void parse_field(val, integral)
+
 static auto parse_kv_cue(std::string_view data) {
     uz tag_off  = 0;
     uz tag_size = 0;
@@ -114,30 +138,7 @@ std::vector<Cue::Track> Cue::parse(
         }
     }; // <-- push_track()
 
-    const std::unordered_map<std::string, TagProc, Hash, Compare> procs{
-        {
-            "GENRE", [&] (std::string_view g) { next.meta.genre = g; }
-        },
-        {
-            "DATE", [&] (std::string_view y) {
-                std::from_chars(y.cbegin(), y.cend(), next.meta.year);
-            }
-        },
-        {
-            "DISCID", [&] (std::string_view id) { next.meta.disc_id = id; }
-        },
-        {
-            "COMMENT", [&] (std::string_view c) { next.meta.comment = c; }
-        },
-        {
-            "PERFORMER", [&] (std::string_view p) { next.meta.artist = p; }
-        },
-        {
-            "COMPOSER", [&] (std::string_view c) { next.meta.composer = c; }
-        },
-        {
-            "ISRC", [&] (std::string_view isrc) { next.meta.isrc = isrc; }
-        },
+    std::unordered_map<std::string, TagProc, Hash, Compare> procs{
         {
             "TITLE", [&] (std::string_view t) {
                 (in_track ? next.meta.title : next.meta.album) = t;
@@ -257,6 +258,29 @@ std::vector<Cue::Track> Cue::parse(
             },
         },
     }; // <-- procs
+
+    template for (constexpr auto& m_tag : Metadata::all_tags()) {
+        static constexpr auto anns = std::define_static_array(
+            stdm::annotations_of(m_tag)
+        );
+
+        template for (constexpr auto ann : anns) {
+            static constexpr auto value = stdm::constant_of(ann);
+            static constexpr auto type  = stdm::type_of(value);
+
+            if constexpr (
+                stdm::has_template_arguments(type)
+                && stdm::template_of(type) == ^^CueTag
+            ) {
+                procs.emplace(
+                    [:value:].tag.string(),
+                    [&next] (std::string_view v) {
+                        parse_field(v, next.meta.[:m_tag:]);
+                    }
+                );
+            }
+        }
+    }
 
     for (const auto& [ k, v ] : parsed_cue) {
         try {

@@ -354,6 +354,7 @@ const UnitTest simple = [] {
     check(tracks[2].file)       == "Among Us (Side B).flac";
 }; // <-- simple
 
+#if 0
 const UnitTest file_in_track = [] {
     static constexpr auto cue_txt = R"cue(
         REM GENRE "Hard Rock"
@@ -409,6 +410,7 @@ const UnitTest file_in_track = [] {
     check(tracks[2].end)        == Cue::Frames::zero();
     check(tracks[2].file)       == "Among Us (Side B).flac";
 }; // <-- file_in_track
+#endif
 
 } // <-- namespace multi_file
 

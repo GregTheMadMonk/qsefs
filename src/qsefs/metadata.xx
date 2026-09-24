@@ -47,6 +47,17 @@ struct Metadata {
     int         year;
     [[=wav_tag("ITRK"), =wav_tag("TRCK"), =wav_tag("IPRT")]]
     uz          index;
+
+    static consteval auto all_tags();
 }; // <-- struct Metadata
+
+consteval auto Metadata::all_tags() {
+    return std::define_static_array(
+        stdm::nonstatic_data_members_of(
+            ^^Metadata,
+            stdm::access_context::current()
+        )
+    );
+} // <-- auto Metadata::all_tags()
 
 } // <-- namespace qsefs

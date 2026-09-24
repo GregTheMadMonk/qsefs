@@ -13,12 +13,7 @@ namespace qsefs::cvt {
 static std::vector<char> write_metadata(const Metadata& meta) {
     std::vector<char> ret{};
 
-    static constexpr auto ctx  = stdm::access_context::current();
-    static constexpr auto flds = std::define_static_array(
-        stdm::nonstatic_data_members_of(^^Metadata, ctx)
-    );
-
-    template for (constexpr auto& fld : flds) {
+    template for (constexpr auto& fld : Metadata::all_tags()) {
         static constexpr auto anns = std::define_static_array(
             stdm::annotations_of_with_type(fld, ^^WavTag)
         );
